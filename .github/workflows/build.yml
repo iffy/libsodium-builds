@@ -10,7 +10,7 @@ jobs:
       release_id: ${{ steps.release_step.outputs.release_id }}
     steps:
     - uses: actions/checkout@v1
-    - name: release_step
+    - id: release_step
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: bash
@@ -63,9 +63,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: bash
       run: |
-        lin fetch ${{ matrix.target }}
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
         echo "RELEASE_ID: $RELEASE_ID"
+        lin fetch ${{ matrix.target }}
         for dname in "$(ls out)"; do
           tarname="libsodium-${dname}-${{ matrix.os }}-$(basename ${{ matrix.target }}).tgz"
           tarname="$(echo "$tarname" | sed -e s_/_-_)"
