@@ -1,0 +1,70 @@
+name: Build libsodium
+on:
+  push:
+  pull_request:
+
+jobs:
+  makerelease:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v1
+    - name: release_step
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if [ "$GITHUB_REF_TYPE" == "tag" ]; then
+          RESP="$(curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/iffy/libsodium-builds/releases -d "{"'"'"tag_name"'"'"":"'"'"$GITHUB_REF_TYPE"'"'"}")"
+          RELEASE_ID=$(echo "$RESP" | jq .id)
+          echo "::set-output name=release_id::$RELEASE_ID"
+        else
+          echo "Skipping release creation since it's not a tag."
+        fi
+  build:
+    needs:
+      - makerelease
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-18.04
+          - ubuntu-20.04
+          - macos-11
+          - macos-10.15
+          - windows-2019
+        target:
+          - local
+        include:
+          - os: macos-11
+            target: build/ios
+          - os: macos-10.15
+            target: build/ios
+          - os: ubuntu-18.04
+            target: build/android
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Nim
+      uses: iffy/install-nim@v4.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        version: binary:1.4.0
+    
+    - name: Install lin
+      run: nimble install -y https://github.com/iffy/lin
+    - name: Build libsodium on ${{ matrix.os }} for ${{ matrix.target }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        lin fetch ${{ matrix.target }}
+        RELEASE_ID="${{ jobs.makerelease.steps.release_step.outputs.release_id }}"
+        if ! [ -z "$RELEASE_ID" ]; then
+          for dname in "$(ls out)"; do
+            tarname="libsodium-${{ matrix.os }}-${{ matrix.target }}-${dname}.tgz"
+            (cd out && tar czvf ../$tarname ${dname})
+            GH_ASSET="https://uploads.github.com/repos/iffy/libsodium-builds/releases/${RELEASE_ID}/assets?name=${tarname}"
+            curl --data-binary @"$tarname" \
+              -H "Authorization: token $github_api_token" \
+              -H "Content-Type: application/octet-stream" "$GH_ASSET"
+          done
+        fi
+    
