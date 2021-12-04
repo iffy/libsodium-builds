@@ -6,6 +6,8 @@ on:
 jobs:
   makerelease:
     runs-on: ubuntu-18.04
+    outputs:
+      release_id: ${{ steps.release_step.outputs.release_id }}
     steps:
     - uses: actions/checkout@v1
     - name: release_step
@@ -56,7 +58,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         lin fetch ${{ matrix.target }}
-        RELEASE_ID="${{ jobs.makerelease.steps.release_step.outputs.release_id }}"
+        RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
         if ! [ -z "$RELEASE_ID" ]; then
           for dname in "$(ls out)"; do
             tarname="libsodium-${{ matrix.os }}-${{ matrix.target }}-${dname}.tgz"
