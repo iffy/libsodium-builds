@@ -62,6 +62,7 @@ jobs:
         if ! [ -z "$RELEASE_ID" ]; then
           for dname in "$(ls out)"; do
             tarname="libsodium-${{ matrix.os }}-${{ matrix.target }}-${dname}.tgz"
+            tarname="$(echo "$tarname" | sed -e s_/_-_)"
             (cd out && tar czvf ../$tarname ${dname})
             GH_ASSET="https://uploads.github.com/repos/iffy/libsodium-builds/releases/${RELEASE_ID}/assets?name=${tarname}"
             curl --data-binary @"$tarname" \
