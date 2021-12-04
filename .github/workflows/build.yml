@@ -63,7 +63,7 @@ jobs:
         lin fetch ${{ matrix.target }}
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
         for dname in "$(ls out)"; do
-          tarname="libsodium-${{ matrix.os }}-$(basename ${{ matrix.target }})-${dname}.tgz"
+          tarname="libsodium-${dname}-${{ matrix.os }}-$(basename ${{ matrix.target }}).tgz"
           tarname="$(echo "$tarname" | sed -e s_/_-_)"
           (cd out && tar czvf ../$tarname ${dname})
           if ! [ -z "$RELEASE_ID" ]; then
