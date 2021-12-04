@@ -62,15 +62,19 @@ jobs:
       run: |
         lin fetch ${{ matrix.target }}
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
-        if ! [ -z "$RELEASE_ID" ]; then
-          for dname in "$(ls out)"; do
-            tarname="libsodium-${{ matrix.os }}-${{ matrix.target }}-${dname}.tgz"
-            tarname="$(echo "$tarname" | sed -e s_/_-_)"
-            (cd out && tar czvf ../$tarname ${dname})
+        for dname in "$(ls out)"; do
+          tarname="libsodium-${{ matrix.os }}-${{ matrix.target }}-${dname}.tgz"
+          tarname="$(echo "$tarname" | sed -e s_/_-_)"
+          (cd out && tar czvf ../$tarname ${dname})
+          if ! [ -z "$RELEASE_ID" ]; then
+            echo "Uploading $tarname ..."
             GH_ASSET="https://uploads.github.com/repos/iffy/libsodium-builds/releases/${RELEASE_ID}/assets?name=${tarname}"
             curl --data-binary @"$tarname" \
               -H "Authorization: token $github_api_token" \
               -H "Content-Type: application/octet-stream" "$GH_ASSET"
-          done
-        fi
+          else
+            echo "Not uploading $tarname"
+          fi
+        done
+        
     
