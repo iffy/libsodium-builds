@@ -43,6 +43,8 @@ jobs:
             target: build/ios
           - os: ubuntu-18.04
             target: build/android
+          - os: macos-11
+            target: build/android
     steps:
     - uses: actions/checkout@v1
     - name: Install Nim
