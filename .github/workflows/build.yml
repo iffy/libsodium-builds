@@ -75,7 +75,7 @@ jobs:
             echo "Uploading $tarname ..."
             GH_ASSET="https://uploads.github.com/repos/iffy/libsodium-builds/releases/${RELEASE_ID}/assets?name=${tarname}"
             curl --data-binary @"$tarname" \
-              -H "Authorization: token $github_api_token" \
+              -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: application/octet-stream" "$GH_ASSET"
           else
             echo "Not uploading $tarname"
