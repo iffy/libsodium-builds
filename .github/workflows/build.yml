@@ -13,6 +13,7 @@ jobs:
     - name: release_step
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      shell: bash
       run: |
         if [ "$GITHUB_REF_TYPE" == "tag" ]; then
           RESP="$(curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/iffy/libsodium-builds/releases -d "{"'"'"tag_name"'"'":"'"'"$GITHUB_REF_TYPE"'"'"}")"
@@ -52,10 +53,12 @@ jobs:
         version: binary:1.4.0
     
     - name: Install lin
+      shell: bash
       run: nimble install -y https://github.com/iffy/lin
     - name: Build libsodium on ${{ matrix.os }} for ${{ matrix.target }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      shell: bash
       run: |
         lin fetch ${{ matrix.target }}
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
