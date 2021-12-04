@@ -15,10 +15,11 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: bash
       run: |
-        if [ "$GITHUB_REF_TYPE" == "tag" ]; then
+        if [ "$GITHUB_REF_NAME" == "release" ]; then
           RESP="$(curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/iffy/libsodium-builds/releases -d "{"'"'"tag_name"'"'":"'"'"$GITHUB_REF_TYPE"'"'"}")"
           RELEASE_ID=$(echo "$RESP" | jq .id)
           echo "::set-output name=release_id::$RELEASE_ID"
+          echo "RELEASE_ID=$RELEASE_ID"
         else
           echo "Skipping release creation since it's not a tag."
         fi
@@ -64,6 +65,7 @@ jobs:
       run: |
         lin fetch ${{ matrix.target }}
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
+        echo "RELEASE_ID: $RELEASE_ID"
         for dname in "$(ls out)"; do
           tarname="libsodium-${dname}-${{ matrix.os }}-$(basename ${{ matrix.target }}).tgz"
           tarname="$(echo "$tarname" | sed -e s_/_-_)"
