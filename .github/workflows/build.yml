@@ -16,7 +16,7 @@ jobs:
       shell: bash
       run: |
         if [ "$GITHUB_REF_NAME" == "release" ]; then
-          TAGNAME=$(date +"%Y-%m-%d")
+          TAGNAME=$(date +"%Y%m%d-%H%M")
           RESP="$(curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/iffy/libsodium-builds/releases -d "{"'"'"tag_name"'"'":"'"'"$TAGNAME"'"'"}")"
           RELEASE_ID=$(echo "$RESP" | jq .id)
           echo "::set-output name=release_id::$RELEASE_ID"
