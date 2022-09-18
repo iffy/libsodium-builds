@@ -33,12 +33,16 @@ jobs:
         os:
           - ubuntu-18.04
           - ubuntu-20.04
+          - macos-12
           - macos-11
           - macos-10.15
           - windows-2019
+          - windows-2022
         target:
           - local
         include:
+          - os: macos-12
+            target: build/ios
           - os: macos-11
             target: build/ios
           - os: macos-10.15
@@ -50,11 +54,11 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install Nim
-      uses: iffy/install-nim@v4.0.2
+      uses: iffy/install-nim@v4.1.3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        version: binary:1.4.0
+        version: binary:1.6.6
     
     - name: Install lin
       shell: bash
