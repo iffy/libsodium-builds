@@ -167,8 +167,9 @@ build.step "android":
         sh "tar", "xf", TARNAME
         cd("libsodium-stable"):
           echo "Using latest build scripts"
-          sh "rm", "-r", "dist-build"
-          sh "cp", "-R", SCRIPTDIR / "dist-build", "dist-build"
+          # sh "rm", "-r", "dist-build"
+          sh "cp", "-R", SCRIPTDIR / "dist-build", "."
+          sh "ls", "-al", "dist-build"
           sh "dist-build"/script
       copyDir(builddir/"libsodium-stable"/"libsodium-android-" & suffix, dst)
 clean.step "android":
