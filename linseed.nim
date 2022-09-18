@@ -1,13 +1,14 @@
 import lin
 import strformat
 
-const ROOT = "https://download.libsodium.org/libsodium/releases/"
-const VERSION = "1.0.18"
-const TARNAME = &"libsodium-{VERSION}-stable.tar.gz"
-const CACHEDIR = "_cache"
-const DLDIR = CACHEDIR / "_fetch"
-const BUILDROOT = CACHEDIR / "_build"
-const OUTDIR = "out"/"v"&VERSION 
+let ROOT = "https://download.libsodium.org/libsodium/releases/"
+let VERSION = "1.0.18"
+let TARNAME = &"libsodium-{VERSION}-stable.tar.gz"
+let CACHEDIR = "_cache".absolutePath
+let DLDIR = CACHEDIR / "_fetch"
+let SCRIPTDIR = CACHEDIR / "_scripts"
+let BUILDROOT = CACHEDIR / "_build"
+let OUTDIR = "out"/"v"&VERSION 
 
 var fetch = sequence("fetch")
 var build = sequence("build", default = true, includes = @["fetch"])
@@ -29,19 +30,34 @@ fetch.step "download":
   createDir DLDIR
   let urls = @[
     # macOS/Linux
-    &"{ROOT}libsodium-{VERSION}-stable.tar.gz",
+    (&"{ROOT}libsodium-{VERSION}-stable.tar.gz", ""),
     # Windows mingw
-    &"{ROOT}libsodium-{VERSION}-stable-mingw.tar.gz",
+    (&"{ROOT}libsodium-{VERSION}-stable-mingw.tar.gz", ""),
     # Windows msvc
     # &"{ROOT}libsodium-{VERSION}-stable-msvc.zip",
+    # build scripts
+    ("https://github.com/jedisct1/libsodium/tarball/7621b135e2ec08cb96d1b5d5d6a213d9713ac513", "buildscripts.tar.gz"),
   ]
-  for url in urls:
-    let dst = DLDIR / url.extractFilename()
+  for (url,filename) in urls:
+    let dst = DLDIR / (if filename == "": url.extractFilename() else: filename)
     if not fileExists(dst):
       echo &"Downloading {url} to {dst}"
-      sh "curl", url, "-o", dst
+      sh "curl", "-L", url, "-o", dst
 deepclean.step "download":
   removeDir DLDIR
+
+fetch.step "extract-buildscripts":
+  if dirExists(SCRIPTDIR):
+    skip "already done"
+  else:
+    let scripttar = "buildscripts.tar.gz"
+    createDir SCRIPTDIR
+    copyFile(DLDIR / scripttar, SCRIPTDIR / scripttar)
+    defer: removeFile(SCRIPTDIR / scripttar)
+    cd SCRIPTDIR:
+      sh "tar", "-x", "--strip-components=1", "-f", scripttar
+clean.step "extract-buildscripts":
+  removeDir SCRIPTDIR
 
 when defined(macosx):
   build.step "macos":
@@ -150,6 +166,9 @@ build.step "android":
       cd builddir:
         sh "tar", "xf", TARNAME
         cd("libsodium-stable"):
+          echo "Using latest build scripts"
+          sh "rm", "-r", "dist-build"
+          sh "cp", "-R", SCRIPTDIR / "dist-build", "dist-build"
           sh "dist-build"/script
       copyDir(builddir/"libsodium-stable"/"libsodium-android-" & suffix, dst)
 clean.step "android":
