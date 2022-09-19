@@ -41,8 +41,9 @@ jobs:
         target:
           - local
         include:
-          - os: macos-12
-            target: build/ios
+          # FIXME: macos-12 build/ios hangs forever
+          # - os: macos-12
+          #   target: build/ios
           - os: macos-11
             target: build/ios
           - os: macos-10.15
