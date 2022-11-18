@@ -16,6 +16,12 @@ var local = sequence("local", help = "Build for the current OS only")
 var clean = sequence("clean", reverse = true)
 var deepclean = sequence("deepclean", reverse = true, includes = @["clean"])
 
+template maybe(body: untyped): untyped =
+  try:
+    body
+  except:
+    discard
+
 when defined(macosx):
   local.step "macos":
     sh "lin", "fetch", "build/macos"
@@ -149,12 +155,13 @@ clean.step "win":
 build.step "android":
   let android_steps = [
     # (arch, build script name, build dir name)
-    ("arm64-v8a", "android-armv8-a.sh", "armv8-a"),
+    ("arm64-v8a", "android-armv8-a.sh", "armv8-a+crypto"),
     ("armeabi-v7a", "android-armv7-a.sh", "armv7-a"),
     ("x86", "android-x86.sh", "i686"),
     ("x86_64", "android-x86_64.sh", "westmere"),
   ]
   for (arch, script, suffix) in android_steps:
+    echo &"Building {arch} using {script} in build dir {suffix} ..."
     let dst = absolutePath(OUTDIR/"android"/arch)
     let builddir = BUILDROOT / "android"
     if dirExists(dst):
@@ -171,6 +178,10 @@ build.step "android":
           sh "cp", "-R", SCRIPTDIR / "dist-build", "."
           sh "ls", "-al", "dist-build"
           sh "dist-build"/script
+      let interdir = builddir/"libsodium-stable"/"libsodium-android-" & suffix
+      if not interdir.dirExists:
+        maybe: sh "ls", "-al", interdir.parentDir
+        raise ValueError.newException(&"Expected {interdir} not found.")
       copyDir(builddir/"libsodium-stable"/"libsodium-android-" & suffix, dst)
 clean.step "android":
   removeDir(OUTDIR/"android")
