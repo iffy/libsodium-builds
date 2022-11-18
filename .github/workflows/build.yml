@@ -1,7 +1,14 @@
 name: Build libsodium
 on:
   push:
+    branches:
+      - master
+      - release
   pull_request:
+    branches:    
+      - master
+      - release
+
 
 jobs:
   makerelease:
@@ -35,7 +42,6 @@ jobs:
           - ubuntu-20.04
           - macos-12
           - macos-11
-          - macos-10.15
           - windows-2019
           - windows-2022
         target:
@@ -45,8 +51,6 @@ jobs:
           # - os: macos-12
           #   target: build/ios
           - os: macos-11
-            target: build/ios
-          - os: macos-10.15
             target: build/ios
           - os: ubuntu-18.04
             target: build/android
