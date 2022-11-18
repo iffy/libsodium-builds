@@ -42,7 +42,7 @@ jobs:
           - ubuntu-20.04
           - macos-12
           - macos-11
-          - macos-10.15
+          # - macos-10.15 # :( Deprecated by GitHub
           - windows-2019
           - windows-2022
         target:
