@@ -54,6 +54,8 @@ jobs:
             target: build/android
           - os: macos-11
             target: build/android
+          - os: ubuntu-20.04
+            target: build/linux-musl
     steps:
     - uses: actions/checkout@v1
     - name: Install Nim
