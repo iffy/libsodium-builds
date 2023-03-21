@@ -83,7 +83,8 @@ jobs:
           if ! [ -z "$RELEASE_ID" ]; then
             echo "Uploading $tarname ..."
             GH_ASSET="https://uploads.github.com/repos/iffy/libsodium-builds/releases/${RELEASE_ID}/assets?name=${tarname}"
-            curl --data-binary @"$tarname" \
+            echo " to $GH_ASSET"
+            curl -v --data-binary @"$tarname" \
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: application/octet-stream" "$GH_ASSET"
           else
