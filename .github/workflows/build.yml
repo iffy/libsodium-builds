@@ -93,6 +93,6 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: tarfile
-        path: out/**/*.tgz
+        path: ./**/libsodium-*.tgz
         
     
