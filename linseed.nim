@@ -120,7 +120,9 @@ build.step "linux":
           make
           make check
           strip --strip-all "$(find . -name libsodium.so)"
-          strip --strip-all "$(find . -name *.a)"
+          for filename in "$(find . -name *.a)"; do
+            strip --strip-all "$filename"
+          done
           """)
         defer: removeFile("buildit.sh")
         when defined(linux):
@@ -153,7 +155,9 @@ build.step "linux-musl":
           make
           make check
           strip --strip-all "$(find . -name libsodium.so)"
-          strip --strip-all "$(find . -name *.a)"
+          for filename in "$(find . -name *.a)"; do
+            strip --strip-all "$filename"
+          done
         """)
         defer: removeFile("buildmusl.sh")
         when defined(linux):
