@@ -120,7 +120,7 @@ build.step "linux":
           make
           make check
           strip --strip-all "$(find . -name libsodium.so)"
-          for filename in "$(find . -name *.a)"; do
+          for filename in $(find . -name *.a); do
             strip --strip-all "$filename"
           done
           """)
@@ -155,7 +155,7 @@ build.step "linux-musl":
           make
           make check
           strip --strip-all "$(find . -name libsodium.so)"
-          for filename in "$(find . -name *.a)"; do
+          for filename in $(find . -name *.a); do
             strip --strip-all "$filename"
           done
         """)
