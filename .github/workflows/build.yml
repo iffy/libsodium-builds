@@ -90,5 +90,9 @@ jobs:
             echo "Not uploading $tarname because there's no RELEASE_ID"
           fi
         done
+    - uses: actions/upload-artifact@v3
+      with:
+        name: tarfile
+        path: out/**/*.tgz
         
     
