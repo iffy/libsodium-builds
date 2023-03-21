@@ -119,10 +119,10 @@ build.step "linux":
           ./configure --disable-debug
           make
           make check
-          strip --strip-unneeded "$(find . -name libsodium.so)"
-          for filename in $(find . -name *.a); do
-            strip --strip-unneeded "$filename"
-          done
+          # strip --strip-unneeded "$(find . -name libsodium.so)"
+          # for filename in $(find . -name *.a); do
+          #   strip --strip-unneeded "$filename"
+          # done
           """)
         defer: removeFile("buildit.sh")
         when defined(linux):
@@ -154,10 +154,10 @@ build.step "linux-musl":
           ./configure --disable-debug
           make
           make check
-          strip --strip-unneeded "$(find . -name libsodium.so)"
-          for filename in $(find . -name *.a); do
-            strip --strip-unneeded "$filename"
-          done
+          # strip --strip-unneeded "$(find . -name libsodium.so)"
+          # for filename in $(find . -name *.a); do
+          #   strip --strip-unneeded "$filename"
+          # done
         """)
         defer: removeFile("buildmusl.sh")
         when defined(linux):
