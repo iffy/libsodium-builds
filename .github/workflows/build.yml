@@ -87,7 +87,7 @@ jobs:
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: application/octet-stream" "$GH_ASSET"
           else
-            echo "Not uploading $tarname"
+            echo "Not uploading $tarname because there's no RELEASE_ID"
           fi
         done
         
