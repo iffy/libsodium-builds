@@ -54,6 +54,8 @@ jobs:
             target: build/android
           - os: macos-11
             target: build/android
+          - os: ubuntu-20.04
+            target: build/linux-musl
     steps:
     - uses: actions/checkout@v1
     - name: Install Nim
@@ -85,8 +87,12 @@ jobs:
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: application/octet-stream" "$GH_ASSET"
           else
-            echo "Not uploading $tarname"
+            echo "Not uploading $tarname because there's no RELEASE_ID"
           fi
         done
+    - uses: actions/upload-artifact@v3
+      with:
+        name: tarfile
+        path: ./**/libsodium-*.tgz
         
     

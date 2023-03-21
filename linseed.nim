@@ -116,8 +116,13 @@ build.step "linux":
         writeFile("./buildit.sh", """
           set -e
           uname -r
-          ./configure
-          make && make check
+          ./configure --disable-debug
+          make
+          make check
+          strip --strip-unneeded "$(find . -name libsodium.so)"
+          for filename in $(find . -name *.a); do
+            strip --strip-unneeded "$filename"
+          done
           """)
         defer: removeFile("buildit.sh")
         when defined(linux):
@@ -129,6 +134,41 @@ build.step "linux":
     copyDir(builddir/"libsodium-stable"/"src"/"libsodium"/".libs", dstdir/"lib")
     copyDir(builddir/"libsodium-stable"/"src"/"libsodium"/"include", dstdir/"include")
 clean.step "linux":
+  removeDir(OUTDIR/"linux")
+
+build.step "linux-musl":
+  let dstdir = OUTDIR/"linux-musl"/"x64"
+  let builddir = BUILDROOT / "linux"
+  if dirExists(dstdir):
+    skip "already done"
+  else:
+    createDir builddir
+    defer: removeDir(builddir)
+    copyFile(DLDIR/TARNAME, builddir/TARNAME)
+    cd builddir:
+      sh "tar", "xf", TARNAME
+      cd("libsodium-stable"):
+        writeFile("./buildmusl.sh", """
+          apk update
+          apk add alpine-sdk ca-certificates
+          ./configure --disable-debug
+          make
+          make check
+          strip --strip-unneeded "$(find . -name libsodium.so)"
+          for filename in $(find . -name *.a); do
+            strip --strip-unneeded "$filename"
+          done
+        """)
+        defer: removeFile("buildmusl.sh")
+        when defined(linux):
+          # build natively
+          sh "bash", "buildmusl.sh"
+        else:
+          # build in docker
+          sh "docker", "run", "--rm", "-v", getCurrentDir() & ":/code", "-w", "/code", "alpine:3.13", "/bin/ash", "buildmusl.sh"
+    copyDir(builddir/"libsodium-stable"/"src"/"libsodium"/".libs", dstdir/"lib")
+    copyDir(builddir/"libsodium-stable"/"src"/"libsodium"/"include", dstdir/"include")
+clean.step "linux-musl":
   removeDir(OUTDIR/"linux")
 
 build.step "windows":
