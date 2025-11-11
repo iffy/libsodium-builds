@@ -24,7 +24,7 @@ jobs:
           TAGNAME=$(date +"%Y%m%d-%H%M")
           RESP="$(curl -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/iffy/libsodium-builds/releases -d "{"'"'"tag_name"'"'":"'"'"$TAGNAME"'"'"}")"
           RELEASE_ID=$(echo "$RESP" | jq .id)
-          echo "::set-output name=release_id::$RELEASE_ID"
+          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
           echo "RELEASE_ID=$RELEASE_ID"
         else
           echo "Skipping release creation since it's not the master branch"
@@ -40,46 +40,22 @@ jobs:
           - macos-latest-intel
           - macos-latest
           - windows-latest
-        target:
-          - local
-        include:
-          # FIXME: macos-12 build/ios hangs forever
-          # - os: macos-12
-          #   target: build/ios
-          - os: macos-latest
-            target: build/ios
-          - os: ubuntu-latest
-            target: build/android
-          - os: macos-latest-intel
-            target: build/android
-          - os: ubuntu-latest
-            target: build/linux-musl
     steps:
     - uses: actions/checkout@v1
-    - name: Install Nim
-      uses: iffy/install-nim@v5
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        version: binary:2.2.6
-    
-    - name: Install lin
-      shell: bash
-      run: nimble install -y https://github.com/iffy/lin
-    
     - name: Build libsodium on ${{ matrix.os }} for ${{ matrix.target }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: bash
       run: |
+        set -e
+        ./install_libsodium_static.sh build
+    - name: Upload to release
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
         echo "RELEASE_ID: $RELEASE_ID"
-        ARCH="$(arch)"
-        lin fetch ${{ matrix.target }}
-        for dname in "$(ls out)"; do
-          tarname="libsodium-${dname}-${{ matrix.os }}-${ARCH}-$(basename ${{ matrix.target }}).tgz"
+        for dname in "$(ls libsodium)"; do
+          tarname="libsodium-${dname}.tgz"
           tarname="$(echo "$tarname" | sed -e s_/_-_)"
-          (cd out && tar czvf ../$tarname ${dname})
+          (cd libsodiumt && tar czvf ../$tarname ${dname})
           if ! [ -z "$RELEASE_ID" ]; then
             echo "Uploading $tarname ..."
             GH_ASSET="https://uploads.github.com/repos/iffy/libsodium-builds/releases/${RELEASE_ID}/assets?name=${tarname}"
@@ -95,5 +71,15 @@ jobs:
       with:
         name: tarfile
         path: ./**/libsodium-*.tgz
-        
+    - name: Install Nim
+      uses: iffy/install-nim@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        version: binary:2.2.6
+    - name: Test nimconfig
+      shell: bash
+      run: |
+        echo 'include "libsodium.nims"' >> config.nims
+        nim r tests/tpwhash.nim
     
