@@ -36,26 +36,23 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-18.04
-          - ubuntu-20.04
-          - macos-15-intel
-          - macos-15
-          - windows-2019
-          - windows-2022
-          - windows-2025
+          - ubuntu-latest
+          - macos-latest-intel
+          - macos-latest
+          - windows-latest
         target:
           - local
         include:
           # FIXME: macos-12 build/ios hangs forever
           # - os: macos-12
           #   target: build/ios
-          - os: macos-15
+          - os: macos-latest
             target: build/ios
-          - os: ubuntu-18.04
+          - os: ubuntu-latest
             target: build/android
-          - os: macos-11
+          - os: macos-latest-intel
             target: build/android
-          - os: ubuntu-20.04
+          - os: ubuntu-latest
             target: build/linux-musl
     steps:
     - uses: actions/checkout@v1
