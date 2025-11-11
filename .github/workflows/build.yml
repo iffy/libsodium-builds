@@ -82,6 +82,7 @@ jobs:
     - name: Test nimconfig
       shell: bash
       run: |
+        nimble install libsodium -y
         ./install_libsodium_static.sh nimconfig > libsodium.nims
         echo 'include "libsodium.nims"' >> config.nims
         nim r tests/tpwhash.nim
