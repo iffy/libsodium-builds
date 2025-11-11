@@ -25,7 +25,7 @@ case "$OS" in
   *) echo "Unsupported OS: $OS" >&2; exit 1 ;;
 esac
 
-OUTNAME="${OUTDIR}/libsodium-${OS}-${ARCH}-v${VERSION}"
+OUTNAME="${OUTDIR}/${OS}-${ARCH}-v${VERSION}"
 
 download_if_not_present() {
   local dst="$1"
@@ -100,13 +100,13 @@ const archsegment = block:
   else: "x64"
 switch("dynlibOverride", "libsodium")
 when defined(macosx):
-  switch("passL", ROOT/"${OUTDIR}"/"libsodium-macos-" & archsegment & "-v${VERSION}"/"libsodium.a")
+  switch("passL", ROOT/"${OUTDIR}"/"macos-" & archsegment & "-v${VERSION}"/"libsodium.a")
 elif defined(linux):
-  switch("cincludes", ROOT/"${OUTDIR}"/"libsodium-linux-" & archsegment & "-v${VERSION}"/"include")
-  switch("clibdir", ROOT/"${OUTDIR}"/"libsodium-linux-" & archsegment & "-v${VERSION}")
+  switch("cincludes", ROOT/"${OUTDIR}"/"linux-" & archsegment & "-v${VERSION}"/"include")
+  switch("clibdir", ROOT/"${OUTDIR}"/"linux-" & archsegment & "-v${VERSION}")
   switch("passL", "-lsodium")
 elif defined(windows):
-  switch("passL", ROOT/"${OUTDIR}"/"libsodium-windows-" & archsegment & "-v${VERSION}"/"libsodium.a")
+  switch("passL", ROOT/"${OUTDIR}"/"windows-" & archsegment & "-v${VERSION}"/"libsodium.a")
 EOF
 }
 

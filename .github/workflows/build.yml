@@ -57,16 +57,16 @@ jobs:
         for dname in "$(ls libsodium)"; do
           tarname="libsodium-${dname}.tgz"
           tarname="$(echo "$tarname" | sed -e s_/_-_)"
-          (cd libsodium && tar czvf ../$tarname ${dname})
+          (cd libsodium && tar czvf "$tarname" ${dname})
           if ! [ -z "$RELEASE_ID" ]; then
             echo "Uploading $tarname ..."
             GH_ASSET="https://uploads.github.com/repos/iffy/libsodium-builds/releases/${RELEASE_ID}/assets?name=${tarname}"
             echo " to $GH_ASSET"
-            curl -v --data-binary @"$tarname" \
+            curl -v --data-binary @"libsodium/$tarname" \
               -H "Authorization: token $GITHUB_TOKEN" \
               -H "Content-Type: application/octet-stream" "$GH_ASSET"
           else
-            echo "Not uploading $tarname because there's no RELEASE_ID"
+            echo "Not uploading libsodium/$tarname because there's no RELEASE_ID"
           fi
         done
         ls -al libsodium/
