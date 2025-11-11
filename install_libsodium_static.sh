@@ -74,7 +74,7 @@ do_build() {
       if [ "$ARCH" == "x32" ]; then
         seg="libsodium-win32"
       fi
-      cp -R "${$CACHEDIR}/${seg}/lib/"* "${OUTNAME}/"
+      cp -R "${CACHEDIR}/${seg}/lib/"* "${OUTNAME}/"
     else
       # linux
       (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable.tar.gz")
