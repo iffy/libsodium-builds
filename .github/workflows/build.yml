@@ -50,6 +50,10 @@ jobs:
         set -e
         ./install_libsodium_static.sh build
     - name: Upload to release
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
         echo "RELEASE_ID: $RELEASE_ID"
         for dname in "$(ls libsodium)"; do
