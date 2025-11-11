@@ -17,11 +17,13 @@ if [ -z "$ARCH" ]; then
   esac
 fi
 
-OS="$(uname -s)"
+OS="${OS:-$(uname -s)}"
 case "$OS" in
-  Darwin) OS="macos" ;;
-  Linux) OS="linux" ;;
-  CYGWIN*|MINGW*) OS="windows" ;;
+  Darwin|macos) OS="macos" ;;
+  Linux|linux) OS="linux" ;;
+  CYGWIN*|MINGW*|windows) OS="windows" ;;
+  ios) OS="ios" ;;
+  android) OS="android" ;;
   *) echo "Unsupported OS: $OS" >&2; exit 1 ;;
 esac
 
@@ -41,14 +43,14 @@ download_if_not_present() {
 }
 
 do_fetch() {
-  if [ "$OS" == "macos" ] || [ "$OS" == "linux" ]; then
-    download_if_not_present "${CACHEDIR}/libsodium-${VERSION}-stable.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable.tar.gz"
-  fi
   if [ "$OS" == "windows" ]; then
     download_if_not_present "${CACHEDIR}/libsodium-${VERSION}-stable-mingw.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable-mingw.tar.gz"
+  else
+    download_if_not_present "${CACHEDIR}/libsodium-${VERSION}-stable.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable.tar.gz"
   fi
-  # for android
-  # download_if_not_present "${CACHEDIR}/scripts/buildscripts.tar.gz" "https://github.com/jedisct1/libsodium/tarball/7621b135e2ec08cb96d1b5d5d6a213d9713ac513"
+  if [ "$OS" == "android" ]; then
+    download_if_not_present "${CACHEDIR}/scripts/buildscripts.tar.gz" "https://github.com/jedisct1/libsodium/tarball/7621b135e2ec08cb96d1b5d5d6a213d9713ac513"
+  fi
 }
 
 do_build() {
@@ -67,6 +69,16 @@ do_build() {
         echo "Already built"
       fi
       cp -R "${CACHEDIR}"/libsodium-stable/libsodium-osx/lib/* "${OUTNAME}/"
+    elif [ "$OS" == "ios" ]; then
+      # ios
+      (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable.tar.gz")
+      if ! [ -e "${CACHEDIR}"/libsodium-stable/libsodium-ios ]; then
+        echo "Building..."
+        (cd "${CACHEDIR}/libsodium-stable" && dist-build/ios.sh)
+      else
+        echo "Already built"
+      fi
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-ios/lib/* "${OUTNAME}/"
     elif [ "$OS" == "windows" ]; then
       # windows
       (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable-mingw.tar.gz")
