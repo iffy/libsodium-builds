@@ -10,7 +10,7 @@ on:
 
 jobs:
   makerelease:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     outputs:
       release_id: ${{ steps.release_step.outputs.release_id }}
     steps:
@@ -49,7 +49,7 @@ jobs:
           # FIXME: macos-12 build/ios hangs forever
           # - os: macos-12
           #   target: build/ios
-          - os: macos-11
+          - os: macos-15
             target: build/ios
           - os: ubuntu-18.04
             target: build/android
