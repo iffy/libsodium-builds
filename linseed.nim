@@ -67,7 +67,11 @@ clean.step "extract-buildscripts":
 
 when defined(macosx):
   build.step "macos":
-    let dstdir = OUTDIR/"macos"/"x64"
+    let archsegment = when hostCPU == "arm64":
+        "arm64"
+      else:
+        "x64"
+    let dstdir = OUTDIR/"macos"/archsegment
     let builddir = BUILDROOT / "macos"
     if dirExists(dstdir):
       skip "already done"
