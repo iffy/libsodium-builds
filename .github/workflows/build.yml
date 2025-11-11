@@ -40,7 +40,7 @@ jobs:
           - windows-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Build libsodium on ${{ matrix.os }} for ${{ matrix.target }}
+    - name: Build libsodium on ${{ matrix.os }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: bash
@@ -69,9 +69,10 @@ jobs:
             echo "Not uploading $tarname because there's no RELEASE_ID"
           fi
         done
+        ls -al libsodium/
     - uses: actions/upload-artifact@v4
       with:
-        path: libsodium/libsodium-*.tgz
+        path: ./libsodium/libsodium-*.tgz
     - name: Install Nim
       uses: iffy/install-nim@v5
       env:
