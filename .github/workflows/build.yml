@@ -40,6 +40,8 @@ jobs:
           - os: windows-latest
           - os: macos-latest
             target_os: ios
+          - os: ubuntu-latest
+            target_os: android
     steps:
     - uses: actions/checkout@v1
     - name: Build libsodium on ${{ matrix.os }} ${{ matrix.target_os }}
