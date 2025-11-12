@@ -76,7 +76,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: name: libsodium-${{ matrix.os }}${{ matrix.target_os != '' && format('-{0}', matrix.target_os) || '' }}
+        name: libsodium-${{ matrix.os }}${{ matrix.target_os != '' && format('-{0}', matrix.target_os) || '' }}
         path: ./libsodium/libsodium-*.tgz
     - name: Install Nim
       uses: iffy/install-nim@v5
