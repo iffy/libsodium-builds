@@ -6,6 +6,10 @@ PREBUILT_URL="https://github.com/iffy/libsodium-builds/releases/latest"
 CACHEDIR="${CACHEDIR:-_cache}"
 OUTDIR="${OUTDIR:-libsodium}"
 
+DLDIR="${CACHEDIR}/_fetch"
+SCRIPTDIR="${CACHEDIR}/_scripts"
+BUILDROOT="${CACHEDIR}/_build"
+
 log() {
   echo "$@" >&2
 }
@@ -51,19 +55,17 @@ download_if_not_present() {
 
 do_fetch() {
   if [ "$TARGET_OS" == "windows" ]; then
-    download_if_not_present "${CACHEDIR}/libsodium-${VERSION}-stable-mingw.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable-mingw.tar.gz"
+    download_if_not_present "${DLDIR}/libsodium-${VERSION}-stable-mingw.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable-mingw.tar.gz"
   else
-    download_if_not_present "${CACHEDIR}/libsodium-${VERSION}-stable.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable.tar.gz"
+    download_if_not_present "${DLDIR}/libsodium-${VERSION}-stable.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable.tar.gz"
   fi
   if [ "$TARGET_OS" == "android" ]; then
-    download_if_not_present "${CACHEDIR}/scripts/buildscripts.tar.gz" "https://github.com/jedisct1/libsodium/tarball/7621b135e2ec08cb96d1b5d5d6a213d9713ac513"
+    download_if_not_present "${DLDIR}/buildscripts.tar.gz" "https://github.com/jedisct1/libsodium/tarball/7621b135e2ec08cb96d1b5d5d6a213d9713ac513"
   fi
 }
 
 do_build() {
-  if [ -f "${OUTNAME}/libsodium.a" ]; then
-    log "${OUTNAME}/libsodium.a already exists"
-  else
+  if [ "$TARGET_OS" == "android" ] || ! [ -f "${OUTNAME}/libsodium.a" ]; then
     do_fetch
     mkdir -p "$OUTNAME"    
     if [ "$TARGET_OS" == "macos" ]; then
@@ -104,8 +106,60 @@ do_build() {
       cp -R "${CACHEDIR}/${seg}/lib/"* "${OUTNAME}/"
     elif [ "$TARGET_OS" == "android" ]; then
       # android
-      log "NOT SUPPORTED: $TARGET_OS"
-      exit 1
+      SCRIPTS_DIR="${SCRIPTDIR}"
+      if [ ! -d "$SCRIPTS_DIR" ]; then
+        mkdir -p "$SCRIPTS_DIR"
+        local scripttar="buildscripts.tar.gz"
+        if [ -f "${DLDIR}/${scripttar}" ]; then
+          cp "${DLDIR}/${scripttar}" "${SCRIPTS_DIR}/${scripttar}"
+          (cd "$SCRIPTS_DIR" && tar -x --strip-components=1 -f "${scripttar}")
+          rm "${SCRIPTS_DIR}/${scripttar}"
+        else
+          log "Buildscripts not found"
+          exit 1
+        fi
+      fi
+
+      local android_steps=(
+        "arm64-v8a android-armv8-a.sh armv8-a+crypto"
+        "armeabi-v7a android-armv7-a.sh armv7-a"
+        "x86 android-x86.sh i686"
+        "x86_64 android-x86_64.sh westmere"
+      )
+
+      mkdir -p "${OUTDIR}/android"
+      local builddir="${BUILDROOT}/android"
+      mkdir -p "$builddir"
+
+      for step in "${android_steps[@]}"; do
+        read -r arch script suffix <<< "$step"
+        log "Building ${arch} using ${script} in build dir ${suffix} ..."
+
+        local dst="${OUTDIR}/${HOST_OS}-${TARGET_OS}-${arch}-v${VERSION}"
+        if [ -d "$dst" ]; then
+          log "${arch} already done"
+          continue
+        fi
+
+        local tarname="libsodium-${VERSION}-stable.tar.gz"
+        cp "${DLDIR}/${tarname}" "${builddir}/${tarname}"
+        (cd "$builddir" && tar xf "${tarname}")
+        (cd "${builddir}/libsodium-stable" && {
+          log "Using latest build scripts"
+          cp -R "${SCRIPTS_DIR}/dist-build" .
+          ls -al dist-build
+          "./dist-build/${script}"
+        })
+        local interdir="${builddir}/libsodium-stable/libsodium-android-${suffix}"
+        if [ ! -d "$interdir" ]; then
+          ls -al "$(dirname "${interdir}")" 2>/dev/null || true
+          log "Expected ${interdir} not found."
+          exit 1
+        fi
+        mkdir -p "$dst"
+        cp -R "${interdir}"/* "$dst"/
+      done
+      rm -rf "$builddir"
     else
       # linux
       (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable.tar.gz")
