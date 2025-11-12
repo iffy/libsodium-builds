@@ -2,7 +2,7 @@
 
 VERSION=1.0.18
 SRC_URL="https://download.libsodium.org/libsodium/releases/"
-PREBUILT_URL="https://github.com/iffy/libsodium-builds/releases/latest"
+api_url="https://api.github.com/repos/iffy/libsodium-builds/releases/latest"
 CACHEDIR="${CACHEDIR:-_cache}"
 OUTDIR="${OUTDIR:-libsodium}"
 
@@ -57,6 +57,26 @@ do_fetch() {
   fi
   if [ "$TARGET_OS" == "android" ]; then
     download_if_not_present "${CACHEDIR}/scripts/buildscripts.tar.gz" "https://github.com/jedisct1/libsodium/tarball/7621b135e2ec08cb96d1b5d5d6a213d9713ac513"
+  fi
+}
+
+do_prebuilt() {
+  local tarname
+  local asset_url
+  if [ "$TARGET_OS" == "$HOST_OS" ]; then
+    tarname="libsodium-${TARGET_OS}-${ARCH}-v${VERSION}.tgz"
+  else
+    tarname="libsodium-${HOST_OS}-${TARGET_OS}-${ARCH}-v${VERSION}.tgz"
+  fi
+  asset_url=$(curl -s "$api_url" | jq -r --arg name "$tarname" '.assets[] | select(.name == $name) | .browser_download_url')
+  if [ "$asset_url" != "null" ]; then
+    download_if_not_present "${CACHEDIR}/${tarname}" "$asset_url"
+    mkdir -p "$OUTDIR"
+    tar xf "${CACHEDIR}/${tarname}" -C "$OUTDIR"
+    return 0
+  else
+    log "Prebuilt not available: ${tarname}"
+    return 1
   fi
 }
 
@@ -145,9 +165,12 @@ do_get() {
   log "Getting libsodium, one way or another"
     
   # 1. Check if there's a prebuilt binary
-  # TODO
-  # 2. Build it from source
-  do_build
+  if do_prebuilt; then
+    log "Prebuilt found"
+  else
+    # 2. Build it from source
+    do_build
+  fi
 
   do_nimconfig > libsodium.nims
   cat <<EOF
