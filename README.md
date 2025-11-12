@@ -15,5 +15,3 @@ To make a new build:
 2. See if it succeeds
 3. If it does, merge that into the `master` branch
 4. Push `master` branch to GitHub and a release will automatically be created
-
-# 

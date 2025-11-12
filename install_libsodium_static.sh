@@ -6,68 +6,95 @@ PREBUILT_URL="https://github.com/iffy/libsodium-builds/releases/latest"
 CACHEDIR="${CACHEDIR:-_cache}"
 OUTDIR="${OUTDIR:-libsodium}"
 
+log() {
+  echo "$@" >&2
+}
+
 ARCH="${ARCH:-}"
 if [ -z "$ARCH" ]; then
-  echo >&2 "Auto-detecting ARCH ..."
+  log "Auto-detecting ARCH ..."
   case "$(uname -m)" in
     i686|i386|x86) ARCH="x32" ;;
     x86_64) ARCH="x64" ;;
     arm64|aarch64) ARCH="arm64" ;;
-    *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
+    *) log "Unsupported architecture: $ARCH"; exit 1 ;;
   esac
 fi
 
-OS="$(uname -s)"
-case "$OS" in
-  Darwin) OS="macos" ;;
-  Linux) OS="linux" ;;
-  CYGWIN*|MINGW*) OS="windows" ;;
-  *) echo "Unsupported OS: $OS" >&2; exit 1 ;;
+HOST_OS="$(uname -s)"
+case "$HOST_OS" in
+  Darwin|macos) HOST_OS="macos" ;;
+  Linux|linux) HOST_OS="linux" ;;
+  CYGWIN*|MINGW*|windows) HOST_OS="windows" ;;
+  *) log "Unsupported OS: $HOST_OS"; exit 1 ;;
 esac
+TARGET_OS="${TARGET_OS:-$HOST_OS}"
 
-OUTNAME="${OUTDIR}/${OS}-${ARCH}-v${VERSION}"
+if [ "$TARGET_OS" == "$HOST_OS" ]; then
+  OUTNAME="${OUTDIR}/${HOST_OS}-${ARCH}-v${VERSION}"
+else
+  OUTNAME="${OUTDIR}/${HOST_OS}-${TARGET_OS}-${ARCH}-v${VERSION}"
+fi
 
 download_if_not_present() {
   local dst="$1"
   local url="$2"
   if [ -e "$dst" ]; then
-    echo "Already downloaded $dst"
+    log "Already downloaded $dst"
   else
     mkdir -p "$(dirname "$dst")"
-    echo "Downloading $dst from $url"
+    log "Downloading $dst from $url"
     curl -L -o "$dst" "$url"
     return "$?"
   fi
 }
 
 do_fetch() {
-  if [ "$OS" == "macos" ] || [ "$OS" == "linux" ]; then
+  if [ "$TARGET_OS" == "windows" ]; then
+    download_if_not_present "${CACHEDIR}/libsodium-${VERSION}-stable-mingw.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable-mingw.tar.gz"
+  else
     download_if_not_present "${CACHEDIR}/libsodium-${VERSION}-stable.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable.tar.gz"
   fi
-  if [ "$OS" == "windows" ]; then
-    download_if_not_present "${CACHEDIR}/libsodium-${VERSION}-stable-mingw.tar.gz" "${SRC_URL}/libsodium-${VERSION}-stable-mingw.tar.gz"
+  if [ "$TARGET_OS" == "android" ]; then
+    download_if_not_present "${CACHEDIR}/scripts/buildscripts.tar.gz" "https://github.com/jedisct1/libsodium/tarball/7621b135e2ec08cb96d1b5d5d6a213d9713ac513"
   fi
-  # for android
-  # download_if_not_present "${CACHEDIR}/scripts/buildscripts.tar.gz" "https://github.com/jedisct1/libsodium/tarball/7621b135e2ec08cb96d1b5d5d6a213d9713ac513"
 }
 
 do_build() {
   if [ -f "${OUTNAME}/libsodium.a" ]; then
-    echo "${OUTNAME}/libsodium.a already exists"
+    log "${OUTNAME}/libsodium.a already exists"
   else
     do_fetch
     mkdir -p "$OUTNAME"    
-    if [ "$OS" == "macos" ]; then
+    if [ "$TARGET_OS" == "macos" ]; then
       # macos
       (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable.tar.gz")
       if ! [ -e "${CACHEDIR}"/libsodium-stable/libsodium-osx ]; then
-        echo "Building..."
+        log "Building..."
         (cd "${CACHEDIR}/libsodium-stable" && dist-build/osx.sh)
       else
-        echo "Already built"
+        log "Already built"
       fi
       cp -R "${CACHEDIR}"/libsodium-stable/libsodium-osx/lib/* "${OUTNAME}/"
-    elif [ "$OS" == "windows" ]; then
+    elif [ "$TARGET_OS" == "ios" ]; then
+      # ios
+      (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable.tar.gz")
+      if ! [ -e "${CACHEDIR}"/libsodium-stable/libsodium-ios ]; then
+        log "Building..."
+        (cd "${CACHEDIR}/libsodium-stable" && dist-build/apple-xcframework.sh)
+      else
+        log "Already built"
+      fi
+      OUTNAME_SILICON="${OUTDIR}/${HOST_OS}-${TARGET_OS}-arm64-v${VERSION}"
+      mkdir -p "$OUTNAME_SILICON"
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-apple/tmp/macos-arm64/lib/* "${OUTNAME_SILICON}/"
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-apple/tmp/macos-arm64/include "${OUTNAME_SILICON}/include"
+      
+      OUTNAME_INTEL="${OUTDIR}/${HOST_OS}-${TARGET_OS}-x64-v${VERSION}"
+      mkdir -p "$OUTNAME_INTEL"
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-apple/tmp/macos-x86_64/lib/* "${OUTNAME_INTEL}/"
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-apple/tmp/macos-x86_64/include "${OUTNAME_INTEL}/include"
+    elif [ "$TARGET_OS" == "windows" ]; then
       # windows
       (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable-mingw.tar.gz")
       local seg="libsodium-win64"
@@ -75,6 +102,10 @@ do_build() {
         seg="libsodium-win32"
       fi
       cp -R "${CACHEDIR}/${seg}/lib/"* "${OUTNAME}/"
+    elif [ "$TARGET_OS" == "android" ]; then
+      # android
+      log "NOT SUPPORTED: $TARGET_OS"
+      exit 1
     else
       # linux
       (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable.tar.gz")
@@ -111,9 +142,10 @@ EOF
 }
 
 do_get() {
-  echo >&2 "Getting libsodium, one way or another"
+  log "Getting libsodium, one way or another"
     
   # 1. Check if there's a prebuilt binary
+  # TODO
   # 2. Build it from source
   do_build
 
@@ -131,10 +163,11 @@ EOF
 
 CMD="${1:-get}"
 
-echo >&2 "ARCH=$ARCH"
-echo >&2 "OS=$OS"
-echo >&2 "CACHEDIR=$CACHEDIR"
-echo >&2 "OUT=$OUTNAME"
-echo >&2 "CMD=$CMD"
+log "ARCH=$ARCH"
+log "HOST_OS=$HOST_OS"
+log "TARGET_OS=$TARGET_OS"
+log "CACHEDIR=$CACHEDIR"
+log "OUT=$OUTNAME"
+log "CMD=$CMD"
 
 (do_${CMD})

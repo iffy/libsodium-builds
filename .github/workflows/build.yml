@@ -33,19 +33,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os:
-          - ubuntu-latest
-          - macos-15-intel
-          - macos-latest
-          - windows-latest
+        include:
+          - os: ubuntu-latest
+          - os: macos-15-intel
+          - os: macos-latest
+          - os: windows-latest
+          - os: macos-latest
+            target_os: ios
     steps:
     - uses: actions/checkout@v1
-    - name: Build libsodium on ${{ matrix.os }}
+    - name: Build libsodium on ${{ matrix.os }} ${{ matrix.target_os }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       shell: bash
       run: |
         set -e
+        export TARGET_OS="${{ matrix.target_os }}"
         ./install_libsodium_static.sh build
     - name: Upload to release
       shell: bash
@@ -54,7 +57,7 @@ jobs:
       run: |
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
         echo "RELEASE_ID: $RELEASE_ID"
-        for dname in "$(ls libsodium)"; do
+        for dname in $(ls libsodium); do
           tarname="libsodium-${dname}.tgz"
           tarname="$(echo "$tarname" | sed -e s_/_-_)"
           (cd libsodium && tar czvf "$tarname" ${dname})
@@ -73,7 +76,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: libsodium-${{ matrix.os }}
+        name: libsodium-${{ matrix.os }}${{ matrix.target_os != '' && format('-{0}', matrix.target_os) || '' }}
         path: ./libsodium/libsodium-*.tgz
     - name: Install Nim
       uses: iffy/install-nim@v5
@@ -84,8 +87,9 @@ jobs:
     - name: Test nimconfig
       shell: bash
       run: |
-        nimble install https://github.com/iffy/nim-libsodium -y
-        ./install_libsodium_static.sh nimconfig > libsodium.nims
-        echo 'include "libsodium.nims"' >> config.nims
-        nim r tests/tpwhash.nim
-    
+        if [ -z "${{ matrix.target_os }}" ]; then
+          nimble install https://github.com/iffy/nim-libsodium -y
+          ./install_libsodium_static.sh nimconfig > libsodium.nims
+          echo 'include "libsodium.nims"' >> config.nims
+          nim r tests/tpwhash.nim
+        fi
