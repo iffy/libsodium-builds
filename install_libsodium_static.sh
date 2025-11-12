@@ -81,11 +81,19 @@ do_build() {
       (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable.tar.gz")
       if ! [ -e "${CACHEDIR}"/libsodium-stable/libsodium-ios ]; then
         log "Building..."
-        (cd "${CACHEDIR}/libsodium-stable" && dist-build/ios.sh)
+        (cd "${CACHEDIR}/libsodium-stable" && dist-build/apple-xcframework.sh)
       else
         log "Already built"
       fi
-      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-ios/lib/* "${OUTNAME}/"
+      OUTNAME_SILICON="${OUTDIR}/${HOST_OS}-${TARGET_OS}-arm64-v${VERSION}"
+      mkdir -p "$OUTNAME_SILICON"
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-apple/tmp/macos-arm64/lib/* "${OUTNAME_SILICON}/"
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-apple/tmp/macos-arm64/include "${OUTNAME_SILICON}/include"
+      
+      OUTNAME_INTEL="${OUTDIR}/${HOST_OS}-${TARGET_OS}-x64-v${VERSION}"
+      mkdir -p "$OUTNAME_INTEL"
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-apple/tmp/macos-x86_64/lib/* "${OUTNAME_INTEL}/"
+      cp -R "${CACHEDIR}"/libsodium-stable/libsodium-apple/tmp/macos-x86_64/include "${OUTNAME_INTEL}/include"
     elif [ "$TARGET_OS" == "windows" ]; then
       # windows
       (cd "$CACHEDIR" && tar xf "libsodium-${VERSION}-stable-mingw.tar.gz")
@@ -157,6 +165,7 @@ CMD="${1:-get}"
 
 log "ARCH=$ARCH"
 log "HOST_OS=$HOST_OS"
+log "TARGET_OS=$TARGET_OS"
 log "CACHEDIR=$CACHEDIR"
 log "OUT=$OUTNAME"
 log "CMD=$CMD"
