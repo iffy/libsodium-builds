@@ -143,9 +143,9 @@ do_build() {
         local tarname="libsodium-${VERSION}-stable.tar.gz"
         cp "${CACHEDIR}/${tarname}" "${builddir}/${tarname}"
         (cd "$builddir" && tar xf "${tarname}")
+        cp -R "${SCRIPTDIR}/dist-build" "${builddir}/libsodium-stable/"
         (cd "${builddir}/libsodium-stable" && {
           log "Using latest build scripts"
-          cp -R "${SCRIPTDIR}/dist-build" .
           ls -al dist-build
           "./dist-build/${script}"
         })
