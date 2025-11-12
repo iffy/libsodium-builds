@@ -105,14 +105,14 @@ do_build() {
       cp -R "${CACHEDIR}/${seg}/lib/"* "${OUTNAME}/"
     elif [ "$TARGET_OS" == "android" ]; then
       # android
-      SCRIPTS_DIR="${SCRIPTDIR}"
-      if [ ! -d "$SCRIPTS_DIR" ]; then
-        mkdir -p "$SCRIPTS_DIR"
+      set -x
+      if [ ! -d "$SCRIPTDIR" ]; then
+        mkdir -p "$SCRIPTDIR"
         local scripttar="buildscripts.tar.gz"
         if [ -f "${CACHEDIR}/${scripttar}" ]; then
-          cp "${CACHEDIR}/${scripttar}" "${SCRIPTS_DIR}/${scripttar}"
-          (cd "$SCRIPTS_DIR" && tar -x --strip-components=1 -f "${scripttar}")
-          rm "${SCRIPTS_DIR}/${scripttar}"
+          cp "${CACHEDIR}/${scripttar}" "${SCRIPTDIR}/${scripttar}"
+          (cd "$SCRIPTDIR" && tar -x --strip-components=1 -f "${scripttar}")
+          rm "${SCRIPTDIR}/${scripttar}"
         else
           log "Buildscripts not found"
           exit 1
@@ -145,7 +145,7 @@ do_build() {
         (cd "$builddir" && tar xf "${tarname}")
         (cd "${builddir}/libsodium-stable" && {
           log "Using latest build scripts"
-          cp -R "${SCRIPTS_DIR}/dist-build" .
+          cp -R "${SCRIPTDIR}/dist-build" .
           ls -al dist-build
           "./dist-build/${script}"
         })
