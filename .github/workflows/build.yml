@@ -57,7 +57,7 @@ jobs:
       run: |
         RELEASE_ID="${{ needs.makerelease.outputs.release_id }}"
         echo "RELEASE_ID: $RELEASE_ID"
-        for dname in "$(ls libsodium)"; do
+        for dname in $(ls libsodium); do
           tarname="libsodium-${dname}.tgz"
           tarname="$(echo "$tarname" | sed -e s_/_-_)"
           (cd libsodium && tar czvf "$tarname" ${dname})
