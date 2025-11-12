@@ -120,7 +120,7 @@ do_build() {
       fi
 
       local android_steps=(
-        "arm64-v8a android-armv8-a.sh armv8-a+crypto"
+        #"arm64-v8a android-armv8-a.sh armv8-a+crypto"
         # "armeabi-v7a android-armv7-a.sh armv7-a"
         "x86 android-x86.sh i686"
         "x86_64 android-x86_64.sh westmere"
