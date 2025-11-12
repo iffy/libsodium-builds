@@ -128,10 +128,10 @@ do_build() {
 
       mkdir -p "${OUTDIR}/android"
       local builddir="${BUILDROOT}/android"
-      mkdir -p "$builddir"
 
       for step in "${android_steps[@]}"; do
         read -r arch script suffix <<< "$step"
+        mkdir -p "$builddir"
         log "Building ${arch} using ${script} in build dir ${suffix} ..."
 
         local dst="${OUTDIR}/${HOST_OS}-${TARGET_OS}-${arch}-v${VERSION}"
@@ -158,6 +158,7 @@ do_build() {
         fi
         mkdir -p "$dst"
         cp -R "${interdir}"/* "$dst"/
+        rm -r "$builddir"
       done
       rm -rf "$builddir"
     else
