@@ -150,6 +150,7 @@ do_build() {
           "./dist-build/${script}"
         })
         local interdir="${builddir}/libsodium-stable/libsodium-android-${suffix}"
+        ls -al "${builddir}/libsodium-stable/" >&2
         if [ ! -d "$interdir" ]; then
           ls -al "$(dirname "${interdir}")" 2>/dev/null || true
           log "Expected ${interdir} not found."
